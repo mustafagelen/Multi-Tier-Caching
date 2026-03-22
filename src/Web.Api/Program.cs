@@ -22,6 +22,21 @@ builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 
 WebApplication app = builder.Build();
 
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    IServiceProvider services = scope.ServiceProvider;
+    try
+    {
+        Infrastructure.Database.ApplicationDbContext context = services.GetRequiredService<Infrastructure.Database.ApplicationDbContext>();
+        await Infrastructure.Database.DbContextExtensions.SeedDataAsync(context);
+    }
+    catch (Exception ex)
+    {
+        ILogger<Program> logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Veritabanı seed edilirken bir hata oluştu.");
+    }
+}
+
 app.MapEndpoints();
 
 if (app.Environment.IsDevelopment())

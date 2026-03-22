@@ -5,6 +5,7 @@ using Infrastructure.DomainEvents;
 using Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         IConfiguration configuration) =>
         services
             .AddServices()
+            .AddDatabase(configuration)
             .AddAuthenticationInternal(configuration)
             .AddAuthorizationInternal();
 
@@ -27,6 +29,20 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
         services.AddTransient<IDomainEventsDispatcher, DomainEventsDispatcher>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+    {
+        string? connectionString = configuration.GetConnectionString("Database");
+
+        services.AddDbContext<Infrastructure.Database.ApplicationDbContext>(
+            options => options
+                .UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention());
+
+        services.AddScoped<Application.Abstractions.Data.IApplicationDbContext>(sp => sp.GetRequiredService<Infrastructure.Database.ApplicationDbContext>());
 
         return services;
     }
