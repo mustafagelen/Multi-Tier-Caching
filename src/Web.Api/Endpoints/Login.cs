@@ -1,25 +1,22 @@
 using Application.Abstractions.Authentication;
-using Application.Abstractions.Data;
-using Domain.Users;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
 
 namespace Web.Api.Endpoints;
 
 public class Login : IEndpoint
 {
+    private const string HardcodedUsername = "admin";
+    private const string HardcodedPassword = "password";
+
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/login", async (LoginRequest request, ITokenProvider tokenProvider, IApplicationDbContext dbContext, CancellationToken ct) =>
+        app.MapPost("/api/login", (LoginRequest request, ITokenProvider tokenProvider) =>
         {
-            User? user = await dbContext.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username && u.PasswordHash == request.Password, ct);
-
-            if (user is not null)
+            if (request.Username == HardcodedUsername && request.Password == HardcodedPassword)
             {
-                string token = tokenProvider.Create(user.Username);
+                string token = tokenProvider.Create(request.Username);
                 return Results.Ok(new { Token = token });
             }
 

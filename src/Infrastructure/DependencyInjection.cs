@@ -74,12 +74,18 @@ public static class DependencyInjection
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
-                o.RequireHttpsMetadata = false;
+                o.RequireHttpsMetadata = !Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                    ?.Equals("Development", StringComparison.OrdinalIgnoreCase) ?? true;
+                o.MapInboundClaims = false;
                 o.TokenValidationParameters = new TokenValidationParameters
                 {
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!)),
                     ValidIssuer = configuration["Jwt:Issuer"],
                     ValidAudience = configuration["Jwt:Audience"],
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
             });

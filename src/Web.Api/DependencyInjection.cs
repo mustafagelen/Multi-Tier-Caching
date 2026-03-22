@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using Web.Api.Infrastructure;
+using Web.Api.OpenApi;
 
 namespace Web.Api;
 
@@ -7,8 +8,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+        });
 
         services.AddApiVersioning(options =>
         {

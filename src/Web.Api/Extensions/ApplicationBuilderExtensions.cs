@@ -1,11 +1,16 @@
-﻿namespace Web.Api.Extensions;
+﻿using Scalar.AspNetCore;
+
+namespace Web.Api.Extensions;
 
 public static class ApplicationBuilderExtensions
 {
-    public static IApplicationBuilder UseSwaggerWithUi(this WebApplication app)
+    public static IApplicationBuilder UseScalarUi(this WebApplication app)
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        app.MapScalarApiReference(options =>
+        {
+            options.Title = "Web.Api";
+            options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        });
 
         return app;
     }
