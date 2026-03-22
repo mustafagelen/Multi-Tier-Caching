@@ -1,5 +1,6 @@
 using Bogus;
 using Domain.Transactions;
+using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Database;
@@ -9,6 +10,21 @@ public static class DbContextExtensions
     public static async Task SeedDataAsync(this ApplicationDbContext context)
     {
         await context.Database.MigrateAsync();
+
+        if (!await context.Users.AnyAsync())
+        {
+            var adminUser = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = "admin",
+                Email = "admin@example.com",
+                PasswordHash = "password123",
+                Scope = "premium_user"
+            };
+
+            await context.Users.AddAsync(adminUser);
+            await context.SaveChangesAsync();
+        }
 
         if (await context.Transactions.AnyAsync())
         {

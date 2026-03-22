@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace Web.Api.Endpoints.Transactions;
 
@@ -33,9 +34,7 @@ public class GetTransactions : IEndpoint
 
             return Results.Ok(data);
         })
-        .MapToApiVersion(1, 0)
-        .WithSummary("Get all transactions V1")
-        .WithDescription("Classic buffered approach.");
+        .MapToApiVersion(1, 0);
 
 
         group.MapGet("/", (IApplicationDbContext dbContext) =>
@@ -45,8 +44,45 @@ public class GetTransactions : IEndpoint
             .AsAsyncEnumerable();
         })
         .MapToApiVersion(2, 0)
-        .RequireAuthorization("PremiumUserPolicy")
-        .WithSummary("Get all transactions V2")
-        .WithDescription("Modern streamed approach.");
+        .RequireAuthorization("PremiumUserPolicy");
+
+        group.MapGet("/summary", async (
+            HybridCache cache,
+            IApplicationDbContext dbContext,
+            CancellationToken ct) =>
+        {
+            const string cacheKey = "transactions_summary";
+
+            var summary = await cache.GetOrCreateAsync(
+                cacheKey,
+                async token =>
+                {
+                    return await dbContext.Transactions
+                        .AsNoTracking()
+                        .GroupBy(t => t.Category)
+                        .Select(g => new { Category = g.Key, Total = g.Sum(x => x.Amount) })
+                        .ToListAsync(token);
+                },
+                tags: ["transactions"],
+                options: new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(5) },
+                cancellationToken: ct);
+
+            return Results.Ok(summary);
+        })
+        .MapToApiVersion(1, 0);
+
+        group.MapPost("/", async (
+            Transaction newTransaction,
+            IApplicationDbContext dbContext,
+            HybridCache cache,
+            CancellationToken ct) =>
+        {
+            dbContext.Transactions.Add(newTransaction);
+            await dbContext.SaveChangesAsync(ct);
+            await cache.RemoveByTagAsync("transactions", ct);
+
+            return Results.Created($"/api/transactions/{newTransaction.Id}", newTransaction);
+        })
+        .MapToApiVersion(1, 0);
     }
 }
