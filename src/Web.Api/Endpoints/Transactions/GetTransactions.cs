@@ -34,7 +34,8 @@ public class GetTransactions : IEndpoint
 
             return Results.Ok(data);
         })
-        .MapToApiVersion(1, 0);
+        .MapToApiVersion(1, 0)
+        .RequireAuthorization();
 
 
         group.MapGet("/", (IApplicationDbContext dbContext) =>
@@ -69,7 +70,8 @@ public class GetTransactions : IEndpoint
 
             return Results.Ok(summary);
         })
-        .MapToApiVersion(1, 0);
+        .MapToApiVersion(1, 0)
+        .RequireAuthorization();
 
         group.MapPost("/", async (
             Transaction newTransaction,
@@ -83,6 +85,7 @@ public class GetTransactions : IEndpoint
 
             return Results.Created($"/api/transactions/{newTransaction.Id}", newTransaction);
         })
-        .MapToApiVersion(1, 0);
+        .MapToApiVersion(1, 0)
+        .RequireAuthorization();
     }
 }
