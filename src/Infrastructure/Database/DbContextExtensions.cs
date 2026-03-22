@@ -8,10 +8,7 @@ public static class DbContextExtensions
 {
     public static async Task SeedDataAsync(this ApplicationDbContext context)
     {
-        if ((await context.Database.GetPendingMigrationsAsync()).Any())
-        {
-            await context.Database.MigrateAsync();
-        }
+        await context.Database.MigrateAsync();
 
         if (await context.Transactions.AnyAsync())
         {
