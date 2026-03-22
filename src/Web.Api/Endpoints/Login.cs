@@ -27,4 +27,4 @@ public class Login : IEndpoint
     }
 }
 
-public record LoginRequest(string Username, string Password);
+public record LoginRequest(string Username = "admin", string Password = "password");
