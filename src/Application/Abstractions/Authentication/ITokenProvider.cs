@@ -2,5 +2,5 @@
 
 public interface ITokenProvider
 {
-    string Create(string username);
+    string Create(string username, bool isPremium = false);
 }

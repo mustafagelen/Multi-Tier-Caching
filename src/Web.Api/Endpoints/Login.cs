@@ -16,7 +16,7 @@ public class Login : IEndpoint
         {
             if (request.Username == HardcodedUsername && request.Password == HardcodedPassword)
             {
-                string token = tokenProvider.Create(request.Username);
+                string token = tokenProvider.Create(request.Username, request.IsPremium);
                 return Results.Ok(new { Token = token });
             }
 
@@ -27,4 +27,7 @@ public class Login : IEndpoint
     }
 }
 
-public record LoginRequest(string Username = "admin", string Password = "password");
+public record LoginRequest(
+    string Username = "admin",
+    string Password = "password",
+    bool IsPremium = false);

@@ -74,18 +74,39 @@ public class GetTransactions : IEndpoint
         .RequireAuthorization();
 
         group.MapPost("/", async (
-            Transaction newTransaction,
+            CreateTransactionRequest request,
             IApplicationDbContext dbContext,
             HybridCache cache,
             CancellationToken ct) =>
         {
-            dbContext.Transactions.Add(newTransaction);
+            var transaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                Amount = request.Amount,
+                Currency = request.Currency,
+                Description = request.Description,
+                TransactionDate = request.TransactionDate ?? DateTime.UtcNow,
+                Status = request.Status,
+                MerchantName = request.MerchantName,
+                Category = request.Category
+            };
+
+            dbContext.Transactions.Add(transaction);
             await dbContext.SaveChangesAsync(ct);
             await cache.RemoveByTagAsync("transactions", ct);
 
-            return Results.Created($"/api/transactions/{newTransaction.Id}", newTransaction);
+            return Results.Created($"/api/transactions/{transaction.Id}", transaction);
         })
         .MapToApiVersion(1, 0)
         .RequireAuthorization();
     }
 }
+
+public record CreateTransactionRequest(
+    decimal Amount = 249.99m,
+    string Currency = "USD",
+    string Description = "Wireless Headphones",
+    DateTime? TransactionDate = null,
+    string Status = "Completed",
+    string MerchantName = "Amazon",
+    string Category = "Electronics");
