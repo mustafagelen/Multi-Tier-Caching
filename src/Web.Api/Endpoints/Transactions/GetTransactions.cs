@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
+using System.Globalization;
 
 namespace Web.Api.Endpoints.Transactions;
 
@@ -54,15 +55,21 @@ public class GetTransactions : IEndpoint
         {
             const string cacheKey = "transactions_summary";
 
-            var summary = await cache.GetOrCreateAsync(
+            List<TransactionSummaryItem> summary = await cache.GetOrCreateAsync<List<TransactionSummaryItem>>(
                 cacheKey,
                 async token =>
                 {
-                    return await dbContext.Transactions
+                    var rawData = await dbContext.Transactions
                         .AsNoTracking()
                         .GroupBy(t => t.Category)
                         .Select(g => new { Category = g.Key, Total = g.Sum(x => x.Amount) })
                         .ToListAsync(token);
+
+                    return rawData
+                        .Select(x => new TransactionSummaryItem(
+                            x.Category,
+                            x.Total.ToString("N2", CultureInfo.GetCultureInfo("tr-TR"))))
+                        .ToList();
                 },
                 tags: ["transactions"],
                 options: new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(5) },
@@ -110,3 +117,5 @@ public record CreateTransactionRequest(
     string Status = "Completed",
     string MerchantName = "Amazon",
     string Category = "Electronics");
+
+public record TransactionSummaryItem(string Category, string Total);
